@@ -1010,27 +1010,23 @@ pub fn main() !void {
     const gpa = gpa_instance.allocator();
     defer _ = gpa_instance.deinit();
 
-    const init_opts = try App.init();
+    const init_opts: dvui.Runner.InitOptions = try App.init();
 
-    // init Raylib backend (creates OS window)
-    // initWindow() means the backend calls CloseWindow for you in deinit()
     var b = try SDLBackend.initWindow(.{
         .allocator = gpa,
         .size = init_opts.size,
-        .vsync = true,
+        .min_size = init_opts.min_size,
+        .max_size = init_opts.max_size,
+        .vsync = init_opts.vsync,
         .title = init_opts.title,
-        // .icon = window_icon_png, // can also call setIconFromFileContent()
+        .icon = init_opts.icon,
     });
     defer b.deinit();
-    // b.log_events = true;
 
     // init dvui Window (maps onto a single OS window)
     var win = try dvui.Window.init(@src(), gpa, b.backend(), .{});
     defer win.deinit();
 
-    c.SDL_EnableScreenSaver();
-
-    // Taken from: https://github.com/david-vanderson/dvui/blob/main/examples/sdl-standalone.zig
     main_loop: while (true) {
         // beginWait coordinates with waitTime below to run frames only when needed
         const nstime = win.beginWait(b.hasEvent());
@@ -1047,7 +1043,6 @@ pub fn main() !void {
         _ = c.SDL_SetRenderDrawColor(b.renderer, 0, 0, 0, 255);
         _ = c.SDL_RenderClear(b.renderer);
 
-        // The demos we pass in here show up under "Platform-specific demos"
         try App.frame();
 
         // marks end of dvui frame, don't call dvui functions after this

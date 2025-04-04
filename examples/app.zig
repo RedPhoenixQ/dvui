@@ -1,7 +1,7 @@
 const std = @import("std");
 const dvui = @import("dvui");
 
-pub fn init() !struct { size: dvui.Size, title: [:0]const u8 } {
+pub fn init() !dvui.Runner.InitOptions {
     std.debug.print("init\n", .{});
     return .{
         .size = .{ .w = 800.0, .h = 600.0 },

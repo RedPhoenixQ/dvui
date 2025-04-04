@@ -7,6 +7,7 @@ pub const math = std.math;
 pub const fnv = std.hash.Fnv1a_32;
 
 pub const Backend = @import("Backend.zig");
+pub const Runner = @import("Runner.zig");
 pub const Color = @import("Color.zig");
 pub const Examples = @import("Examples.zig");
 pub const Event = @import("Event.zig");
