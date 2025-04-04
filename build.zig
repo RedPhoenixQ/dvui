@@ -86,8 +86,9 @@ pub fn build(b: *std.Build) !void {
 
         const dvui_sdl = addDvuiModule(b, target, optimize, "dvui_sdl", true);
         linkBackend(dvui_sdl, sdl_mod);
-        addExample(b, target, optimize, "sdl-standalone", dvui_sdl);
-        addExample(b, target, optimize, "sdl-ontop", dvui_sdl);
+        addExample(b, target, optimize, "sdl-standalone", dvui_sdl, null, null);
+        addExample(b, target, optimize, "sdl-ontop", dvui_sdl, null, null);
+        addExample(b, target, optimize, "app", dvui_sdl, sdl_mod, .sdl);
     }
 
     // Raylib
@@ -147,8 +148,8 @@ pub fn build(b: *std.Build) !void {
 
         const dvui_raylib = addDvuiModule(b, target, optimize, "dvui_raylib", false);
         linkBackend(dvui_raylib, raylib_mod);
-        addExample(b, target, optimize, "raylib-standalone", dvui_raylib);
-        addExample(b, target, optimize, "raylib-ontop", dvui_raylib);
+        addExample(b, target, optimize, "raylib-standalone", dvui_raylib, null, null);
+        addExample(b, target, optimize, "raylib-ontop", dvui_raylib, null, null);
     }
 
     // Dx11
@@ -167,8 +168,8 @@ pub fn build(b: *std.Build) !void {
 
             const dvui_dx11 = addDvuiModule(b, target, optimize, "dvui_dx11", true);
             linkBackend(dvui_dx11, dx11_mod);
-            addExample(b, target, optimize, "dx11-standalone", dvui_dx11);
-            addExample(b, target, optimize, "dx11-ontop", dvui_dx11);
+            addExample(b, target, optimize, "dx11-standalone", dvui_dx11, null, null);
+            addExample(b, target, optimize, "dx11-ontop", dvui_dx11, null, null);
         }
     }
 
@@ -340,16 +341,38 @@ fn addExample(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-    comptime name: []const u8,
+    comptime example_name: []const u8,
     dvui_mod: *std.Build.Module,
+    /// If defined, this module provides the entry point for the example to be included into
+    app_runner_mod: ?*std.Build.Module,
+    /// Name of the backend for the runner to give unique names to the compile steps
+    comptime backend_runner: ?BackendToBuild,
 ) void {
-    const exe = b.addExecutable(.{
-        .name = name,
-        .root_source_file = b.path("examples/" ++ name ++ ".zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("dvui", dvui_mod);
+    const name = comptime if (backend_runner) |backend| @tagName(backend) ++ "-" ++ example_name else example_name;
+    const exe = if (app_runner_mod) |runner_mod| blk: {
+        const exe = b.addExecutable(.{
+            .name = name,
+            .root_module = runner_mod,
+        });
+        const app_mod = b.createModule(.{
+            .root_source_file = b.path("examples/" ++ example_name ++ ".zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        app_mod.addImport("dvui", dvui_mod);
+        exe.root_module.addImport("app", app_mod);
+        exe.root_module.addImport("dvui", dvui_mod);
+        break :blk exe;
+    } else blk: {
+        const exe = b.addExecutable(.{
+            .name = name,
+            .root_source_file = b.path("examples/" ++ example_name ++ ".zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        exe.root_module.addImport("dvui", dvui_mod);
+        break :blk exe;
+    };
 
     if (target.result.os.tag == .windows) {
         exe.win32_manifest = b.path("./src/main.manifest");

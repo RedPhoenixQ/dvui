@@ -1002,3 +1002,69 @@ pub fn getSDLVersion() std.SemanticVersion {
         };
     }
 }
+
+pub fn main() !void {
+    const App = @import("app");
+
+    var gpa_instance = std.heap.DebugAllocator(.{}).init;
+    const gpa = gpa_instance.allocator();
+    defer _ = gpa_instance.deinit();
+
+    const init_opts = try App.init();
+
+    // init Raylib backend (creates OS window)
+    // initWindow() means the backend calls CloseWindow for you in deinit()
+    var b = try SDLBackend.initWindow(.{
+        .allocator = gpa,
+        .size = init_opts.size,
+        .vsync = true,
+        .title = init_opts.title,
+        // .icon = window_icon_png, // can also call setIconFromFileContent()
+    });
+    defer b.deinit();
+    // b.log_events = true;
+
+    // init dvui Window (maps onto a single OS window)
+    var win = try dvui.Window.init(@src(), gpa, b.backend(), .{});
+    defer win.deinit();
+
+    c.SDL_EnableScreenSaver();
+
+    // Taken from: https://github.com/david-vanderson/dvui/blob/main/examples/sdl-standalone.zig
+    main_loop: while (true) {
+        // beginWait coordinates with waitTime below to run frames only when needed
+        const nstime = win.beginWait(b.hasEvent());
+
+        // marks the beginning of a frame for dvui, can call dvui functions after this
+        try win.begin(nstime);
+
+        // send all SDL events to dvui for processing
+        const quit = try b.addAllEvents(&win);
+        if (quit) break :main_loop;
+
+        // if dvui widgets might not cover the whole window, then need to clear
+        // the previous frame's render
+        _ = c.SDL_SetRenderDrawColor(b.renderer, 0, 0, 0, 255);
+        _ = c.SDL_RenderClear(b.renderer);
+
+        // The demos we pass in here show up under "Platform-specific demos"
+        try App.frame();
+
+        // marks end of dvui frame, don't call dvui functions after this
+        // - sends all dvui stuff to backend for rendering, must be called before renderPresent()
+        const end_micros = try win.end(.{});
+
+        // cursor management
+        b.setCursor(win.cursorRequested());
+        b.textInputRect(win.textInputRequested());
+
+        // render frame to OS
+        b.renderPresent();
+
+        // waitTime and beginWait combine to achieve variable framerates
+        const wait_event_micros = win.waitTime(end_micros, null);
+        b.waitEventTimeout(wait_event_micros);
+    }
+
+    try App.deinit();
+}
