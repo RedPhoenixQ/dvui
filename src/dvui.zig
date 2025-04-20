@@ -3547,7 +3547,7 @@ pub fn comboBox(src: std.builtin.SourceLocation, entries: []const []const u8, in
     if (try sug.dropped()) {
         for (entries) |entry| {
             if (try sug.addChoiceLabel(entry)) {
-                te.textSet(entry, false);
+                te.textSet(entry, "");
             }
         }
     }
