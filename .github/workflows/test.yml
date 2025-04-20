@@ -30,4 +30,4 @@ jobs:
         run: zig build check
 
       - name: Run tests
-        run: zig build test
+        run: zig build test -Dbackend=testing
