@@ -3366,8 +3366,7 @@ pub fn animations() !void {
         var box = try dvui.box(@src(), .vertical, .{ .margin = .{ .x = 10 } });
         defer box.deinit();
 
-        const pixel_data = dvui.Color.yellow.toRGBA() ++ dvui.Color.cyan.toRGBA() ++ dvui.Color.red.toRGBA() ++ dvui.Color.magenta.toRGBA();
-        var pixels = pixel_data;
+        var colors = [4]dvui.Color{ .yellow, .cyan, .red, .magenta };
 
         // example of how to run frames at a certain fps
         const millis_per_frame = 500;
@@ -3392,9 +3391,9 @@ pub fn animations() !void {
             _ = try dvui.checkbox(@src(), &global.round_corners, "Round Corners", .{});
         }
 
-        std.mem.rotate(u8, &pixels, @intCast(frame * 4));
+        std.mem.rotate(dvui.Color, &colors, @intCast(frame));
 
-        const tex = dvui.textureCreate(.cast(&pixels), 2, 2, .nearest);
+        const tex = dvui.textureCreate(.cast(@ptrCast(@constCast(&colors))), 2, 2, .nearest);
         dvui.textureDestroyLater(tex);
 
         var frame_box = try dvui.box(@src(), .horizontal, .{ .min_size_content = .{ .w = 50, .h = 50 } });

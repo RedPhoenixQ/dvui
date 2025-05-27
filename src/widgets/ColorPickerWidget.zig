@@ -314,7 +314,7 @@ pub fn getHueSelectorTexture(dir: dvui.enums.Direction) !dvui.Texture {
             .vertical => .{ 1, hue_selector_colors.len },
         };
         // FIXME: textureCreate should not need a non const pointer to pixels
-        res.value_ptr.texture = dvui.textureCreate(.cast(@constCast(&hue_selector_pixels)), width, height, .linear);
+        res.value_ptr.texture = dvui.textureCreate(.cast(@ptrCast(@constCast(&hue_selector_colors))), width, height, .linear);
     }
     return res.value_ptr.texture;
 }
@@ -324,26 +324,15 @@ pub fn getValueSaturationTexture(hue: f32) !dvui.Texture {
     const res = try dvui.currentWindow().texture_cache.getOrPut(hue_texture_id);
     res.value_ptr.used = true;
     if (!res.found_existing) {
-        var pixels = Color.white.toRGBA() ** 2 ++ Color.black.toRGBA() ** 2;
-        comptime std.debug.assert(pixels.len == 2 * 2 * 4);
+        var pixels: [4]Color.PMA = comptime @bitCast([_]Color{ .white, undefined, .black, .black });
         // set top right corner to the max value of that hue
-        @memcpy(pixels[4..8], &Color.HSV.toColor(.{ .h = hue }).toRGBA());
-        res.value_ptr.texture = dvui.textureCreate(.cast(&pixels), 2, 2, .linear);
+        pixels[1] = .cast(Color.HSV.toColor(.{ .h = hue }));
+        res.value_ptr.texture = dvui.textureCreate(.cast(@ptrCast(&pixels)), 2, 2, .linear);
     }
     return res.value_ptr.texture;
 }
 
 const hue_selector_colors: [7]Color = .{ .red, .yellow, .lime, .cyan, .blue, .magenta, .red };
-const hue_selector_pixels: [hue_selector_colors.len * 4]u8 = blk: {
-    var pixels: [hue_selector_colors.len * 4]u8 = undefined;
-    for (0.., hue_selector_colors) |i, c| {
-        pixels[i * 4 + 0] = c.r;
-        pixels[i * 4 + 1] = c.g;
-        pixels[i * 4 + 2] = c.b;
-        pixels[i * 4 + 3] = c.a;
-    }
-    break :blk pixels;
-};
 
 const Options = dvui.Options;
 const Color = dvui.Color;

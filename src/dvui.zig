@@ -30,7 +30,7 @@ pub const Backend = @import("Backend.zig");
 pub const Window = @import("Window.zig");
 pub const Examples = @import("Examples.zig");
 
-pub const Color = @import("Color.zig");
+pub const Color = @import("Color.zig").Color;
 pub const Event = @import("Event.zig");
 pub const Font = @import("Font.zig");
 pub const Options = @import("Options.zig");
@@ -5519,9 +5519,9 @@ pub fn textEntryColor(src: std.builtin.SourceLocation, init_opts: TextEntryColor
         if (init_opts.value) |v| {
             if ((te.enter_pressed or te.text_changed) and
                 (color.?.r != v.r or
-                    color.?.g != v.g or
-                    color.?.b != v.b or
-                    color.?.a != v.a))
+                color.?.g != v.g or
+                color.?.b != v.b or
+                color.?.a != v.a))
             {
                 dataSet(null, id, "value", color.?);
                 v.* = color.?;
