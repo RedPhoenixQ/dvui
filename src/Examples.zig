@@ -477,7 +477,7 @@ pub fn demo() !void {
             }
 
             if (use_cache) {
-                cache.deinit();
+                try cache.deinit();
             }
 
             try bw.drawFocus();
@@ -2008,7 +2008,7 @@ pub fn plots() !void {
     plot.deinit();
 
     if (pic) |*p| {
-        p.stop();
+        try p.stop();
         defer p.deinit();
 
         const arena = dvui.currentWindow().arena();
@@ -2251,7 +2251,7 @@ pub fn reorderListsAdvanced() !void {
 
             // reset to use next space, need a separator
             _ = try dvui.separator(@src(), .{ .expand = .horizontal, .margin = dvui.Rect.all(6) });
-            try reorderable.reinstall();
+            reorderable.reinstall();
         }
 
         // actual content of the list entry
@@ -3509,7 +3509,7 @@ pub fn animations() !void {
 
         std.mem.rotate(u8, &pixels, @intCast(frame * 4));
 
-        const tex = dvui.textureCreate(.cast(&pixels), 2, 2, .nearest);
+        const tex = try dvui.textureCreate(.cast(&pixels), 2, 2, .nearest);
         dvui.textureDestroyLater(tex);
 
         var frame_box = try dvui.box(@src(), .horizontal, .{ .min_size_content = .{ .w = 50, .h = 50 } });
