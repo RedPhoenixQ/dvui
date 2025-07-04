@@ -92,6 +92,7 @@ pub const StructFieldOptions = se.StructFieldOptions;
 pub const enums = @import("enums.zig");
 pub const easing = @import("easing.zig");
 pub const testing = @import("testing.zig");
+pub const Pin = @import("Pin.zig");
 pub const ShrinkingArenaAllocator = @import("shrinking_arena_allocator.zig").ShrinkingArenaAllocator;
 pub const TrackingAutoHashMap = @import("tracking_hash_map.zig").TrackingAutoHashMap;
 
