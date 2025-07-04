@@ -24,6 +24,8 @@ options: Options,
 src: std.builtin.SourceLocation,
 rect_scale_cache: ?RectScale = null,
 
+pin: dvui.Pin = .{},
+
 pub fn init(src: std.builtin.SourceLocation, init_options: InitOptions, options: Options) WidgetData {
     const parent = dvui.parentGet();
     const id = parent.extendId(src, options.idExtra());
@@ -59,6 +61,7 @@ pub fn init(src: std.builtin.SourceLocation, init_options: InitOptions, options:
 }
 
 pub fn register(self: *WidgetData) void {
+    self.pin.pin();
     self.rect_scale_cache = self.rectScale();
 
     // for normal widgets this is fine, but subwindows have to take care to
@@ -169,10 +172,12 @@ pub fn register(self: *WidgetData) void {
 }
 
 pub fn visible(self: *const WidgetData) bool {
+    self.pin.check();
     return !dvui.clipGet().intersect(self.borderRectScale().r).empty();
 }
 
 pub fn borderAndBackground(self: *const WidgetData, opts: struct { fill_color: ?Color = null }) void {
+    self.pin.check();
     if (!self.visible()) {
         return;
     }
@@ -218,6 +223,7 @@ pub fn borderAndBackground(self: *const WidgetData, opts: struct { fill_color: ?
 }
 
 pub fn focusBorder(self: *const WidgetData) void {
+    self.pin.check();
     if (self.visible()) {
         const rs = self.borderRectScale();
         const thick = 2 * rs.s;
@@ -227,6 +233,7 @@ pub fn focusBorder(self: *const WidgetData) void {
 }
 
 pub fn rectScale(self: *const WidgetData) RectScale {
+    self.pin.check();
     if (self.rect_scale_cache) |rsc| {
         return rsc;
     }
@@ -239,37 +246,45 @@ pub fn rectScale(self: *const WidgetData) RectScale {
 }
 
 pub fn borderRect(self: *const WidgetData) Rect {
+    self.pin.check();
     return self.rect.inset(self.options.marginGet());
 }
 
 pub fn borderRectScale(self: *const WidgetData) RectScale {
+    self.pin.check();
     const r = self.borderRect().offsetNeg(self.rect);
     return self.rectScale().rectToRectScale(r);
 }
 
 pub fn backgroundRect(self: *const WidgetData) Rect {
+    self.pin.check();
     return self.rect.inset(self.options.marginGet()).inset(self.options.borderGet());
 }
 
 pub fn backgroundRectScale(self: *const WidgetData) RectScale {
+    self.pin.check();
     const r = self.backgroundRect().offsetNeg(self.rect);
     return self.rectScale().rectToRectScale(r);
 }
 
 pub fn contentRect(self: *const WidgetData) Rect {
+    self.pin.check();
     return self.rect.inset(self.options.marginGet()).inset(self.options.borderGet()).inset(self.options.paddingGet());
 }
 
 pub fn contentRectScale(self: *const WidgetData) RectScale {
+    self.pin.check();
     const r = self.contentRect().offsetNeg(self.rect);
     return self.rectScale().rectToRectScale(r);
 }
 
 pub fn minSizeMax(self: *WidgetData, s: Size) void {
+    self.pin.check();
     self.min_size = Size.max(self.min_size, s);
 }
 
 pub fn minSizeSetAndRefresh(self: *WidgetData) void {
+    self.pin.check();
     self.min_size = self.min_size.min(self.options.max_sizeGet());
 
     if (dvui.minSizeGet(self.id)) |ms| {
@@ -316,12 +331,14 @@ pub fn minSizeSetAndRefresh(self: *WidgetData) void {
 }
 
 pub fn minSizeReportToParent(self: *const WidgetData) void {
+    self.pin.check();
     if (self.options.rect == null) {
         self.parent.minSizeForChild(self.min_size);
     }
 }
 
 pub fn validate(self: *const WidgetData) *WidgetData {
+    self.pin.check();
     std.debug.assert(self.id != WidgetId.undef); // Indicates a use after deinit() error.
     return @constCast(self);
 }

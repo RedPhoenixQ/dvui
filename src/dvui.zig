@@ -5174,6 +5174,7 @@ pub fn separator(src: std.builtin.SourceLocation, opts: Options) WidgetData {
 
     var wd = WidgetData.init(src, .{}, defaults.override(opts));
     wd.register();
+    wd.pin.unpin(); // We are returning wd by value so we must unpin
     wd.borderAndBackground(.{});
     wd.minSizeSetAndRefresh();
     wd.minSizeReportToParent();
@@ -5187,6 +5188,7 @@ pub fn spacer(src: std.builtin.SourceLocation, opts: Options) WidgetData {
     const defaults: Options = .{ .name = "Spacer" };
     var wd = WidgetData.init(src, .{}, defaults.override(opts));
     wd.register();
+    wd.pin.unpin(); // We are returning wd by value so we must unpin
     wd.borderAndBackground(.{});
     wd.minSizeSetAndRefresh();
     wd.minSizeReportToParent();
@@ -5462,6 +5464,7 @@ pub fn image(src: std.builtin.SourceLocation, init_opts: ImageInitOptions, opts:
 
     var wd = WidgetData.init(src, .{}, options.override(.{ .min_size_content = size }));
     wd.register();
+    wd.pin.unpin(); // We are returning wd by value so we must unpin
 
     const cr = wd.contentRect();
     const ms = wd.options.min_size_contentGet();

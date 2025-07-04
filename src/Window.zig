@@ -1179,6 +1179,7 @@ pub fn begin(
 
     // Window's wd is kept frame to frame, so manually reset the cache.
     self.data().rect_scale_cache = null;
+    self.data().pin = .{}; // Reset the pin so register doesn't panic on re-pinning
     self.data().register();
 
     self.layout = .{};
