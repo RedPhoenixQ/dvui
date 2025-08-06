@@ -180,6 +180,12 @@ class Dvui {
     renderRequested = false;
     renderTimeoutId = 0;
 
+    prevPixelRatio = window.devicePixelRatio;
+    /** @type {[number, number] | undefined}} */
+    canvasWidthHeight;
+    /** @type {MediaQueryList} */
+    pixelRatioMediaQuery;
+
     /** @type {WebAssembly.Instance} */
     instance;
     stopped = false;
@@ -254,6 +260,36 @@ class Dvui {
         }
 
         return idx;
+    }
+
+    devicePixelRationChange() {
+        if (this.pixelRatioMediaQuery) {
+            this.pixelRatioMediaQuery.removeEventListener(
+                "change",
+                this.devicePixelRationChange.bind(this),
+            );
+        }
+        this.pixelRatioMediaQuery = matchMedia(
+            `(resolution: ${window.devicePixelRatio}dppx)`,
+        );
+        this.pixelRatioMediaQuery.addEventListener(
+            "change",
+            this.devicePixelRationChange.bind(this),
+        );
+        if (!this.gl) return;
+        const w = this.gl.canvas.clientWidth;
+        const h = this.gl.canvas.clientHeight;
+        // Get the amount of change needed to be applied
+        const scale = this.prevPixelRatio / window.devicePixelRatio;
+        this.prevPixelRatio = window.devicePixelRatio;
+        console.log("wxh " + w + "x" + h + " scale " + scale);
+        if (!this.canvasWidthHeight) {
+            this.canvasWidthHeight = [w, h];
+        }
+        this.canvasWidthHeight[0] *= scale;
+        this.canvasWidthHeight[1] *= scale;
+        this.gl.canvas.width = Math.floor(this.canvasWidthHeight[0]);
+        this.gl.canvas.height = Math.floor(this.canvasWidthHeight[1]);
     }
 
     constructor() {
@@ -936,6 +972,8 @@ class Dvui {
             return;
         }
 
+        this.devicePixelRationChange();
+
         if (!this.webgl2) {
             const ext = this.gl.getExtension("OES_element_index_uint");
             if (ext === null) {
@@ -1096,12 +1134,6 @@ class Dvui {
         this.renderRequested = false;
 
         // if the canvas changed size, adjust the backing buffer
-        const w = this.gl.canvas.clientWidth;
-        const h = this.gl.canvas.clientHeight;
-        const scale = window.devicePixelRatio;
-        //console.log("wxh " + w + "x" + h + " scale " + scale);
-        this.gl.canvas.width = Math.round(w * scale);
-        this.gl.canvas.height = Math.round(h * scale);
         this.renderTargetSize = [
             this.gl.drawingBufferWidth,
             this.gl.drawingBufferHeight,
